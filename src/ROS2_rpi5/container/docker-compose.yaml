@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  ros2_base:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      - DISPLAY=$DISPLAY
+    privileged: true
+    volumes:
+      - ./workspaces:/home/ubuntu/workspaces
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /dev:/dev
+    network_mode: host
