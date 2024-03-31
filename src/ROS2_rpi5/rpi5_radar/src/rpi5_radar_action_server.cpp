@@ -2,7 +2,7 @@
 #include <memory>
 #include <thread>
 
-#include "rpi5_radar/action/Rpi5radar.hpp"
+#include "rpi5_radar_action_interface/action/rpi5radar.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
@@ -12,7 +12,7 @@ namespace rpi5_radar{
     class Rpi5RadarActionServer : public rclcpp::Node{
         public:
         //Indicamos que interfaz de accion vamos a usar
-        using Rpi5radar = rpi5_radar::action::Rpi5radar;
+        using Rpi5radar = rpi5_radar_action_interface::action::Rpi5radar;
         using GoalHandle = rclcpp_action::ServerGoalHandle<Rpi5radar>;
 
         //Con este constrcutor inicamos el nodo como action server
@@ -57,7 +57,7 @@ namespace rpi5_radar{
             rclcpp::Rate loop_rate(1);
             const auto goal = goal_handle->get_goal();
             //Definir el feedbak a dar
-            auto feedback = std::make_shared<Rpi5radar::Rpi5radar>();
+            auto feedback = std::make_shared<Rpi5radar::Feedback>();
             auto &ultrasonic_feedback = feedback->ultrasonic_read;
             auto &servo_feedback = feedback->servo_degree;
             //Hacemos ya una lectura incial
@@ -102,4 +102,4 @@ namespace rpi5_radar{
 
 }// namespace rpi5_radar
 
-RCLCPP_COMPONENTS_REGISTER_NODE(cpp_action_server::Rpi5RadarActionServer)
+RCLCPP_COMPONENTS_REGISTER_NODE(rpi5_radar::Rpi5RadarActionServer)
