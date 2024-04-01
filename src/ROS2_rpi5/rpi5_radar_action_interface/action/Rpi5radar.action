@@ -1,10 +1,10 @@
-#request: servo deegrees to scan
+#request (goal): servo deegrees to scan
 float32 servo_start
 float32 servo_end
 ---
 #result: all reads of the ultrasonic + each servo positivo for each read
 float64[] ultrasonic_reads
-float64[] servo_deegres
+float64[] servo_degrees
 ---
 #constant feedback: actual ultrasonic read + actual servo position
 float64 ultrasonic_read

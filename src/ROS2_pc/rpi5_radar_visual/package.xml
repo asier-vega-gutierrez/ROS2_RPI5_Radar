@@ -9,6 +9,14 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <!--main library-->
+  <depend>rclcpp</depend>
+  <!--for actions-->
+  <depend>rclcpp_action</depend>
+  <depend>rclcpp_components</depend>
+  <!--custom action interface-->
+  <depend>rpi5_radar_action_interface</depend>
+
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
