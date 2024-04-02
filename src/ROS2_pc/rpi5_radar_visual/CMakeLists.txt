@@ -25,7 +25,7 @@ ament_target_dependencies(action_client
   "rclcpp"
   "rclcpp_action"
   "rclcpp_components")
-rclcpp_components_register_node(action_client PLUGIN "rpi5_radar_visual::Rpi5RadarActionClient" EXECUTABLE rpi5_radar_visual)
+rclcpp_components_register_node(action_client PLUGIN "rpi5_radar_visual::Rpi5RadarActionClient" EXECUTABLE rpi5_radar_action_client)
 install(TARGETS
   action_client
   ARCHIVE DESTINATION lib
