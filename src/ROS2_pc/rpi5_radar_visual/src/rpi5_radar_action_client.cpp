@@ -40,10 +40,10 @@ namespace rpi5_radar_visual{
                 //Estabelcemos el mensaje goal para rellenarlo
                 auto goal_msg = Rpi5radar::Goal();
                 //Se escribe en la parte de request por que se envia un peticion de objetivo
-                goal_msg.servo_start = 0.0;
+                goal_msg.servo_start = 30.0;
                 goal_msg.servo_end = 100.0;
                 goal_msg.servo_waypoints = 15;
-
+                goal_msg.loop_speed = 1.0;
                 RCLCPP_INFO(this->get_logger(), "Sending goal");
                 //Tenemos que estabelcer las opciones de la request 
                 auto send_goal_options = rclcpp_action::Client<Rpi5radar>::SendGoalOptions();

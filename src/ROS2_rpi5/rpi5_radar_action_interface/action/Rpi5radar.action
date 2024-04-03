@@ -2,6 +2,7 @@
 float64 servo_start
 float64 servo_end
 int64 servo_waypoints
+float64 loop_speed
 ---
 #result: all reads of the ultrasonic + each servo positivo for each read
 float64[] ultrasonic_reads

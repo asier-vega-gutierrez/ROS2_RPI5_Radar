@@ -8,7 +8,6 @@ RUN apt install net-tools -y
 RUN apt install nmap -y 
 RUN apt install xauth -y
 RUN apt install git -y
-#RUN install code MIRAR COMO ES
 RUN apt-get install libgpiod2 libgpiod-dev -y
 RUN apt install gpiod -y
 
