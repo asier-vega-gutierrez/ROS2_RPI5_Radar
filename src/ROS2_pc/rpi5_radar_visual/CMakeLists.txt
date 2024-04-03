@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED) # for action client
 find_package(rclcpp_components REQUIRED) # for action client
 find_package(rpi5_radar_action_interface REQUIRED) # incude the pakage that contains the action interface
+find_package(OpenCV REQUIRED) # opencv to work with images
 
 # for action client
 add_library(action_client SHARED
@@ -24,7 +25,8 @@ ament_target_dependencies(action_client
   "rpi5_radar_action_interface"
   "rclcpp"
   "rclcpp_action"
-  "rclcpp_components")
+  "rclcpp_components"
+  "OpenCV")
 rclcpp_components_register_node(action_client PLUGIN "rpi5_radar_visual::Rpi5RadarActionClient" EXECUTABLE rpi5_radar_action_client)
 install(TARGETS
   action_client

@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <sstream>
+#include <opencv2/opencv.hpp>
 
 #include "rpi5_radar_action_interface/action/rpi5radar.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -10,12 +11,17 @@
 #include "rclcpp_components/register_node_macro.hpp"
 
 namespace rpi5_radar_visual{
+
     //Creamos un nodo
     class Rpi5RadarActionClient : public rclcpp::Node{
         public:
+
+            //ATRIBUTOS
             //Indicamos que interfaz de accion vamos a usar
             using Rpi5radar = rpi5_radar_action_interface::action::Rpi5radar;
             using GoalHandle = rclcpp_action::ClientGoalHandle<Rpi5radar>;
+
+            //METODOS
             //Constructor que incializa el cliente de accion
             explicit Rpi5RadarActionClient(const rclcpp::NodeOptions & options): Node("rpi5_action_client", options){
                 this->client_ptr_ = rclcpp_action::create_client<Rpi5radar>( //la interfaz de .accion
@@ -26,7 +32,6 @@ namespace rpi5_radar_visual{
                 std::chrono::milliseconds(500),
                 std::bind(&Rpi5RadarActionClient::send_goal, this));
             }
-
             //funcion que se ejecuta cada 500ms para enviar el goal
             void send_goal(){
                 using namespace std::placeholders;
@@ -40,10 +45,11 @@ namespace rpi5_radar_visual{
                 //Estabelcemos el mensaje goal para rellenarlo
                 auto goal_msg = Rpi5radar::Goal();
                 //Se escribe en la parte de request por que se envia un peticion de objetivo
-                goal_msg.servo_start = 30.0;
-                goal_msg.servo_end = 100.0;
+                goal_msg.servo_start = 0.0;
+                goal_msg.servo_end = 180.0;
                 goal_msg.servo_waypoints = 15;
-                goal_msg.loop_speed = 1.0;
+                goal_msg.loop_speed = 3.0;
+                //Realizamo el envio
                 RCLCPP_INFO(this->get_logger(), "Sending goal");
                 //Tenemos que estabelcer las opciones de la request 
                 auto send_goal_options = rclcpp_action::Client<Rpi5radar>::SendGoalOptions();
@@ -58,9 +64,12 @@ namespace rpi5_radar_visual{
             }
 
         private:
+
+            //TRIBUTOS
             rclcpp_action::Client<Rpi5radar>::SharedPtr client_ptr_;
             rclcpp::TimerBase::SharedPtr timer_;
 
+            //METODOS
             //Metodo para recepcionar la respuesta de nuestra request
             void goal_response_callback(const GoalHandle::SharedPtr & goal_handle){
                 if (!goal_handle) {
@@ -73,7 +82,7 @@ namespace rpi5_radar_visual{
             void feedback_callback(
                 GoalHandle::SharedPtr,const std::shared_ptr<const Rpi5radar::Feedback> feedback){
                 std::stringstream ss;
-                ss << "Feedcback received: ";
+                ss << "Feedback received: ";
                 ss << feedback->ultrasonic_read << " ";
                 ss << feedback->servo_degree << " ";
                 RCLCPP_INFO(this->get_logger(), ss.str().c_str());
@@ -102,10 +111,41 @@ namespace rpi5_radar_visual{
                     ss << number << " ";
                 }
                 RCLCPP_INFO(this->get_logger(), ss.str().c_str());
+                print_radar(result.result->ultrasonic_reads, result.result->servo_degrees);
                 rclcpp::shutdown();
-        }
-    };  // class Rpi5RadarActionClient
+            }
+            //Metodo para pintar el radar
+            void print_radar(auto distances, auto degrees){
+                //Colores
+                cv::Scalar red_color(0, 0, 255);
+                cv::Scalar white_color(255, 255, 255);
+                // Create a black image
+                cv::Mat image = cv::Mat::zeros(720, 1280, CV_8UC3);
+                // Draw a filled circle
+                cv::Point radar_point(426, 360);
+                cv::circle(image, radar_point, 5, red_color, cv::FILLED);
+                for (int i = 0; i < std::size(distances); i++){
+                    //Obtenemos el angulo en radianes y la distancia
+                    double angle_print = (degrees[i]) * (CV_PI / 180.0);
+                    double distance_print = distances[i];
+                    if (distance_print == -1){
+                        distance_print = 300;
+                    }
+                    //Calculamos el punto con respecto a radar
+                    int end_x = radar_point.x + static_cast<int>(distance_print * std::sin(angle_print));
+                    int end_y = radar_point.y + static_cast<int>(distance_print * std::cos(angle_print));
+                    cv::Point endpoint(end_x, end_y);
+                    //Pintamos una linea
+                    cv::line(image, radar_point, endpoint, white_color, 2);
+                }
+                // Display the black image
+                cv::namedWindow("Black Image", cv::WINDOW_AUTOSIZE);
+                cv::imshow("Black Image", image);
+                cv::waitKey(0);
+            }
+        
+    };// class Rpi5RadarActionClient
+}// namespace rpi5_radar_visual 
 
-}  // namespace rpi5_radar_visual
 
 RCLCPP_COMPONENTS_REGISTER_NODE(rpi5_radar_visual::Rpi5RadarActionClient)
