@@ -101,7 +101,8 @@ namespace rpi5_radar{
                 ultrasonic_result.push_back(ultrasonic_feedback);
                 servo_result.push_back(servo_feedback);
                 //Iteramos hasta conseguir el objetivo del request
-                for (int i = 0; (i < goal->servo_waypoints) && rclcpp::ok(); ++i) {
+                int n_iterations = goal->servo_waypoints;
+                for (int i = 0; i < n_iterations*2 && rclcpp::ok(); ++i) {
                     //Si se produce una calcelacion del cleinte se deve enviar el resultado igualmente
                     if (goal_handle->is_canceling()) {
                         //Cojemos el ultimo feedback
@@ -113,8 +114,16 @@ namespace rpi5_radar{
                         return;
                     }
                     //El servo se mueve a la posicion actual + el cacho hasta el siguiente waypoint (teninedo en cunta el offset si no empieza en 0)
+                    //La vuelta se produce cuando llega a la mitad de los waypoints
+                    if (i < n_iterations && servo_feedback < 180){
+                        //Actualizamos el feedback del servo
+                        servo_feedback = servo_move(line_servo, servo_feedback + ((goal->servo_end-goal->servo_start)/goal->servo_waypoints));
+                    }else{
+                        //Actualizamos el feedback del servo
+                        servo_feedback = servo_move(line_servo, servo_feedback - ((goal->servo_end-goal->servo_start)/goal->servo_waypoints));
+                    }
                     //Actualizamo el feedback
-                    servo_feedback = servo_move(line_servo, servo_feedback + ((goal->servo_end-goal->servo_start)/goal->servo_waypoints));
+                    //servo_feedback = servo_move(line_servo, servo_feedback + ((goal->servo_end-goal->servo_start)/goal->servo_waypoints));
                     ultrasonic_feedback = ultrasonic_read(line_trigger, line_echo);
                     //Publicamos el feedback
                     goal_handle->publish_feedback(feedback);

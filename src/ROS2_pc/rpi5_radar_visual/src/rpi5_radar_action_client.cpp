@@ -73,9 +73,9 @@ namespace rpi5_radar_visual{
             //ATRIBUTOS
             rclcpp_action::Client<Rpi5radar>::SharedPtr client_ptr_;
             rclcpp::TimerBase::SharedPtr timer_;
-            //Esta vvraibles son para poder mostrar el scaneo de forma actualizada
-            double *acumulated_feedback_ultrasonic_read = new double[this->servo_waypoints];
-            double *acumulated_feedback_servo_degree = new double[this->servo_waypoints];
+            //Esta variables son para poder mostrar el scaneo de forma actualizada
+            double *acumulated_feedback_ultrasonic_read = new double[this->servo_waypoints*2];
+            double *acumulated_feedback_servo_degree = new double[this->servo_waypoints*2];
             int feedback_id{0};
 
             //METODOS
@@ -143,13 +143,14 @@ namespace rpi5_radar_visual{
             void print_radar(auto distances, auto degrees, bool scan){
                 //Colores
                 cv::Scalar red_color(0, 0, 255);
+                cv::Scalar blue_color(255, 0, 0);
                 cv::Scalar white_color(255, 255, 255);
                 // Create a black image
                 cv::Mat image = cv::Mat::zeros(720, 1280, CV_8UC3);
                 // Draw a filled circle
                 cv::Point radar_point(426, 360);
                 cv::circle(image, radar_point, 5, red_color, cv::FILLED);
-                for (int i = 0; i < this->servo_waypoints; i++){
+                for (int i = 0; i < this->servo_waypoints*2; i++){
                     //Obtenemos el angulo en radianes y la distancia
                     double angle_print = (degrees[i]) * (CV_PI / 180.0);
                     double distance_print = distances[i];
@@ -160,8 +161,12 @@ namespace rpi5_radar_visual{
                     int end_x = radar_point.x + static_cast<int>(distance_print * std::sin(angle_print));
                     int end_y = radar_point.y + static_cast<int>(distance_print * std::cos(angle_print));
                     cv::Point endpoint(end_x, end_y);
-                    //Pintamos una linea
-                    cv::line(image, radar_point, endpoint, white_color, 1);
+                    //Pintamos una linea en funcion de en que direccion valla el servo (ida o vuelta)
+                    if (i < this->servo_waypoints){
+                        cv::line(image, radar_point, endpoint, white_color, 1);
+                    }else{
+                        cv::line(image, radar_point, endpoint, blue_color, 1);
+                    }
                 }
                 //Mostramos por pantalla la imagen
                 cv::namedWindow("Black Image", cv::WINDOW_AUTOSIZE);
