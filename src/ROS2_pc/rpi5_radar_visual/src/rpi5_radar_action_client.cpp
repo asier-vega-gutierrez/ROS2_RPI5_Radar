@@ -20,6 +20,11 @@ namespace rpi5_radar_visual{
             //Indicamos que interfaz de accion vamos a usar
             using Rpi5radar = rpi5_radar_action_interface::action::Rpi5radar;
             using GoalHandle = rclcpp_action::ClientGoalHandle<Rpi5radar>;
+            //Constantes para hacer la request
+            const int servo_waypoints = 50;
+            const int servo_start = 0.0;
+            const int servo_end = 180.0;
+            const int loop_speed = 10.0;
 
             //METODOS
             //Constructor que incializa el cliente de accion
@@ -45,10 +50,10 @@ namespace rpi5_radar_visual{
                 //Estabelcemos el mensaje goal para rellenarlo
                 auto goal_msg = Rpi5radar::Goal();
                 //Se escribe en la parte de request por que se envia un peticion de objetivo
-                goal_msg.servo_start = 0.0;
-                goal_msg.servo_end = 180.0;
-                goal_msg.servo_waypoints = 15;
-                goal_msg.loop_speed = 3.0;
+                goal_msg.servo_start = this->servo_start;
+                goal_msg.servo_end = this->servo_end;
+                goal_msg.servo_waypoints = this->servo_waypoints;
+                goal_msg.loop_speed = this->loop_speed;
                 //Realizamo el envio
                 RCLCPP_INFO(this->get_logger(), "Sending goal");
                 //Tenemos que estabelcer las opciones de la request 
@@ -65,9 +70,13 @@ namespace rpi5_radar_visual{
 
         private:
 
-            //TRIBUTOS
+            //ATRIBUTOS
             rclcpp_action::Client<Rpi5radar>::SharedPtr client_ptr_;
             rclcpp::TimerBase::SharedPtr timer_;
+            //Esta vvraibles son para poder mostrar el scaneo de forma actualizada
+            double *acumulated_feedback_ultrasonic_read = new double[this->servo_waypoints];
+            double *acumulated_feedback_servo_degree = new double[this->servo_waypoints];
+            int feedback_id{0};
 
             //METODOS
             //Metodo para recepcionar la respuesta de nuestra request
@@ -79,29 +88,41 @@ namespace rpi5_radar_visual{
                 }
             }
             //Metodo para recepcionar el feedback que se va a recibir de forma continua
-            void feedback_callback(
-                GoalHandle::SharedPtr,const std::shared_ptr<const Rpi5radar::Feedback> feedback){
+            void feedback_callback(GoalHandle::SharedPtr,const std::shared_ptr<const Rpi5radar::Feedback> feedback){
+                //Pintamos el feedbakc por consola
                 std::stringstream ss;
                 ss << "Feedback received: ";
                 ss << feedback->ultrasonic_read << " ";
                 ss << feedback->servo_degree << " ";
                 RCLCPP_INFO(this->get_logger(), ss.str().c_str());
+                //Acumulamos el feedback en esta variabels apre despues pintarlo
+                acumulated_feedback_ultrasonic_read[feedback_id] = feedback->ultrasonic_read;
+                acumulated_feedback_servo_degree[feedback_id] = feedback->servo_degree;
+                //Pintamos el esacaneo hasta ahora
+                print_radar(acumulated_feedback_ultrasonic_read,acumulated_feedback_servo_degree, 1);
+                //sumamos uno al id del feedback
+                feedback_id++;
             }
             //Metodo para recepcionar la resultado
             void result_callback(const GoalHandle::WrappedResult & result){
+                //Comprobamos el resultado enviado
                 switch (result.code) {
                     case rclcpp_action::ResultCode::SUCCEEDED:
                         break;
                     case rclcpp_action::ResultCode::ABORTED:
                         RCLCPP_ERROR(this->get_logger(), "Goal was aborted");
+                        feedback_id = 0;
                         return;
                     case rclcpp_action::ResultCode::CANCELED:
                         RCLCPP_ERROR(this->get_logger(), "Goal was canceled");
+                        feedback_id = 0;
                         return;
                     default:
                         RCLCPP_ERROR(this->get_logger(), "Unknown result code");
+                        feedback_id = 0;
                         return;
                 }
+                //Pintamos el resultado enviado
                 std::stringstream ss;
                 ss << "Result received: ";
                 for (auto number : result.result->ultrasonic_reads) {
@@ -111,11 +132,15 @@ namespace rpi5_radar_visual{
                     ss << number << " ";
                 }
                 RCLCPP_INFO(this->get_logger(), ss.str().c_str());
-                print_radar(result.result->ultrasonic_reads, result.result->servo_degrees);
+                //Repintamos el escaneo completo
+                print_radar(result.result->ultrasonic_reads, result.result->servo_degrees, 0);
+                //Aciones de fin de nodo
+                delete[] acumulated_feedback_ultrasonic_read;
+                delete[] acumulated_feedback_servo_degree;
                 rclcpp::shutdown();
             }
             //Metodo para pintar el radar
-            void print_radar(auto distances, auto degrees){
+            void print_radar(auto distances, auto degrees, bool scan){
                 //Colores
                 cv::Scalar red_color(0, 0, 255);
                 cv::Scalar white_color(255, 255, 255);
@@ -124,7 +149,7 @@ namespace rpi5_radar_visual{
                 // Draw a filled circle
                 cv::Point radar_point(426, 360);
                 cv::circle(image, radar_point, 5, red_color, cv::FILLED);
-                for (int i = 0; i < std::size(distances); i++){
+                for (int i = 0; i < this->servo_waypoints; i++){
                     //Obtenemos el angulo en radianes y la distancia
                     double angle_print = (degrees[i]) * (CV_PI / 180.0);
                     double distance_print = distances[i];
@@ -136,14 +161,18 @@ namespace rpi5_radar_visual{
                     int end_y = radar_point.y + static_cast<int>(distance_print * std::cos(angle_print));
                     cv::Point endpoint(end_x, end_y);
                     //Pintamos una linea
-                    cv::line(image, radar_point, endpoint, white_color, 2);
+                    cv::line(image, radar_point, endpoint, white_color, 1);
                 }
-                // Display the black image
+                //Mostramos por pantalla la imagen
                 cv::namedWindow("Black Image", cv::WINDOW_AUTOSIZE);
                 cv::imshow("Black Image", image);
-                cv::waitKey(0);
+                //En funcion de si estamo escaneando o no la imagen depues de pintarse se para o no
+                if (scan == 1){ 
+                    cv::waitKey(1);
+                }else{
+                    cv::waitKey(0);
+                }
             }
-        
     };// class Rpi5RadarActionClient
 }// namespace rpi5_radar_visual 
 
