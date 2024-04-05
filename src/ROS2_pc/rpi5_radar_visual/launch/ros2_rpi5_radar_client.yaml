@@ -1,0 +1,19 @@
+launch:
+  - arg:
+      name: 'servo_waypoints'
+      default: '50'
+  - arg:
+      name: 'servo_start'
+      default: '0.0'
+  - arg:
+      name: 'servo_end'
+      default: '180.0'
+  - arg:
+      name: 'loop_speed'
+      default: '10.0'
+
+
+- node:
+    pkg: "rpi5_radar_visual"
+    exec: "rpi5_radar_action_client"
+    name: "ros2_rpi5_radar_client"

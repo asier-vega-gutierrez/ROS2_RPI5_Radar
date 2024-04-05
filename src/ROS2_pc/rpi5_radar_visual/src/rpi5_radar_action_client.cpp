@@ -20,11 +20,11 @@ namespace rpi5_radar_visual{
             //Indicamos que interfaz de accion vamos a usar
             using Rpi5radar = rpi5_radar_action_interface::action::Rpi5radar;
             using GoalHandle = rclcpp_action::ClientGoalHandle<Rpi5radar>;
-            //Constantes para hacer la request
-            const int servo_waypoints = 50;
-            const int servo_start = 0.0;
-            const int servo_end = 180.0;
-            const int loop_speed = 10.0;
+            //Variables para hacer la request
+            int servo_waypoints = 50;
+            int servo_start = 0.0;
+            int servo_end = 180.0;
+            int loop_speed = 10.0;
 
             //METODOS
             //Constructor que incializa el cliente de accion
@@ -32,10 +32,15 @@ namespace rpi5_radar_visual{
                 this->client_ptr_ = rclcpp_action::create_client<Rpi5radar>( //la interfaz de .accion
                 this, //este nodo
                 "rpi5_radar"); //nombre de la accion
-                //este timer envia cada 500ms una solo goal
+                //Este timer envia cada 500ms una solo goal
                 this->timer_ = this->create_wall_timer(
                 std::chrono::milliseconds(500),
                 std::bind(&Rpi5RadarActionClient::send_goal, this));
+                //Parametros
+                this->declare_parameter("servo_waypoints", 50);
+                this->declare_parameter("servo_start", 0.0);
+                this->declare_parameter("servo_end", 180.0);
+                this->declare_parameter("loop_speed", 10.0);
             }
             //funcion que se ejecuta cada 500ms para enviar el goal
             void send_goal(){
@@ -50,7 +55,7 @@ namespace rpi5_radar_visual{
                 //Estabelcemos el mensaje goal para rellenarlo
                 auto goal_msg = Rpi5radar::Goal();
                 //Se escribe en la parte de request por que se envia un peticion de objetivo
-                goal_msg.servo_start = this->servo_start;
+                goal_msg.servo_start = this->servo_start; //this->get_parameter("my_parameter")
                 goal_msg.servo_end = this->servo_end;
                 goal_msg.servo_waypoints = this->servo_waypoints;
                 goal_msg.loop_speed = this->loop_speed;
@@ -151,21 +156,26 @@ namespace rpi5_radar_visual{
                 cv::Point radar_point(426, 360);
                 cv::circle(image, radar_point, 5, red_color, cv::FILLED);
                 for (int i = 0; i < this->servo_waypoints*2; i++){
-                    //Obtenemos el angulo en radianes y la distancia
-                    double angle_print = (degrees[i]) * (CV_PI / 180.0);
-                    double distance_print = distances[i];
-                    if (distance_print == -1){
-                        distance_print = 300;
-                    }
-                    //Calculamos el punto con respecto a radar
-                    int end_x = radar_point.x + static_cast<int>(distance_print * std::sin(angle_print));
-                    int end_y = radar_point.y + static_cast<int>(distance_print * std::cos(angle_print));
-                    cv::Point endpoint(end_x, end_y);
-                    //Pintamos una linea en funcion de en que direccion valla el servo (ida o vuelta)
-                    if (i < this->servo_waypoints){
+                    if(degrees[i] != 0 && distances[i] != 0){
+                        //Obtenemos el angulo en radianes y la distancia
+                        double angle_print = (degrees[i]) * (CV_PI / 180.0);
+                        double distance_print = distances[i];
+                        if (distance_print == -1){
+                            distance_print = 300;
+                        }
+                        //Calculamos el punto con respecto a radar
+                        int end_x = radar_point.x + static_cast<int>(distance_print * std::sin(angle_print));
+                        int end_y = radar_point.y + static_cast<int>(distance_print * std::cos(angle_print));
+                        cv::Point endpoint(end_x, end_y);
+                        
+                        //Pintamos una linea indicando la distancia medida en dicha orientacion
                         cv::line(image, radar_point, endpoint, white_color, 1);
-                    }else{
-                        cv::line(image, radar_point, endpoint, blue_color, 1);
+                        //Si hemos llegado a la cantida de waypoint hacemos un reset de las lineas para ver solo las de vuelta
+                        if (i == this->servo_waypoints){
+                            image = cv::Mat::zeros(720, 1280, CV_8UC3);
+                            cv::Point radar_point(426, 360);
+                            cv::circle(image, radar_point, 5, red_color, cv::FILLED);
+                        }  
                     }
                 }
                 //Mostramos por pantalla la imagen
