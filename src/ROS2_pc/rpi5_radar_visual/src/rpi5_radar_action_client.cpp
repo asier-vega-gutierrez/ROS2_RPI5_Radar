@@ -20,7 +20,7 @@ namespace rpi5_radar_visual{
             //Indicamos que interfaz de accion vamos a usar
             using Rpi5radar = rpi5_radar_action_interface::action::Rpi5radar;
             using GoalHandle = rclcpp_action::ClientGoalHandle<Rpi5radar>;
-            //Variables para hacer la request
+            //Variables para hacer la request (solo usar en caso de debug)
             int servo_waypoints = 50;
             int servo_start = 0.0;
             int servo_end = 180.0;
@@ -55,10 +55,10 @@ namespace rpi5_radar_visual{
                 //Estabelcemos el mensaje goal para rellenarlo
                 auto goal_msg = Rpi5radar::Goal();
                 //Se escribe en la parte de request por que se envia un peticion de objetivo
-                goal_msg.servo_start = this->servo_start; //this->get_parameter("my_parameter")
-                goal_msg.servo_end = this->servo_end;
-                goal_msg.servo_waypoints = this->servo_waypoints;
-                goal_msg.loop_speed = this->loop_speed;
+                goal_msg.servo_start = this->get_parameter("servo_start").as_double();
+                goal_msg.servo_end = this->get_parameter("servo_end").as_double();
+                goal_msg.servo_waypoints = this->get_parameter("servo_waypoints").as_int();
+                goal_msg.loop_speed = this->get_parameter("loop_speed").as_double();
                 //Realizamo el envio
                 RCLCPP_INFO(this->get_logger(), "Sending goal");
                 //Tenemos que estabelcer las opciones de la request 
@@ -138,7 +138,7 @@ namespace rpi5_radar_visual{
                 }
                 RCLCPP_INFO(this->get_logger(), ss.str().c_str());
                 //Repintamos el escaneo completo
-                print_radar(result.result->ultrasonic_reads, result.result->servo_degrees, 0);
+                print_radar(result.result->ultrasonic_reads, result.result->servo_degrees, 1);
                 //Aciones de fin de nodo
                 delete[] acumulated_feedback_ultrasonic_read;
                 delete[] acumulated_feedback_servo_degree;
@@ -181,7 +181,7 @@ namespace rpi5_radar_visual{
                 //Mostramos por pantalla la imagen
                 cv::namedWindow("Black Image", cv::WINDOW_AUTOSIZE);
                 cv::imshow("Black Image", image);
-                //En funcion de si estamo escaneando o no la imagen depues de pintarse se para o no
+                //En funcion de si estamo escaneando o no la imagen depues de pintarse se para (solo usar en caso de debug) o no
                 if (scan == 1){ 
                     cv::waitKey(1);
                 }else{
