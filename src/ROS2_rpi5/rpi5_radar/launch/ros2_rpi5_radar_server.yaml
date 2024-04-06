@@ -1,0 +1,5 @@
+launch:
+- node:
+    pkg: "rpi5_radar"
+    exec: "rpi5_radar_action_server"
+    name: "ros2_rpi5_radar_server"
