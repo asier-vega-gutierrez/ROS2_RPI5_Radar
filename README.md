@@ -5,6 +5,7 @@
     <li>Date: April 2024</li>
     <li>Description: We need a RaspberryPi 5, a servomotor, a ultrasound sensor and another device compatible with ROS2 Humble. Using the ROS2 Humble framework, a node is created that contains the "action interface" where the type of message that the client must send to the server is defined. For the server part, the RaspberryPi 5 is used with the Raspberry Pi OS operating system, based on Debian, so it does not allow ROS2 to be installed. To solve this, a Docker container with an Ubuntu image with ROS2 Humble installed among other dependencies is used. In order to control the sensors and actuators, the Libgpiod library is used. Once this package is launched, it waits to receive a client request. The client is located on another device with ROS2 Humble installed and networked with the Raspberry Pi 5, from a "launch file" that runs this node and with which it is possible to modify its parameters. Once the message has been sent, the client will begin to receive constant feedback with the current positions of the servo and the distances measured by the ultrasonic sensor. With this data, it generates a window where the different signals that have been received during the entire time of operation are displayed. scanning, for the latter OpenCV is used. </li>
 </ul>
+
 ### Español: 
 <ul>
     <li>Fechas: Abril 2024</li>
